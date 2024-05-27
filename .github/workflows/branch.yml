@@ -50,7 +50,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/fullaccessnew
-          role-duration-seconds: 12000
+          role-duration-seconds: 1200
 
       - uses: hashicorp/setup-terraform@v2
       - run: terraform init -upgrade -backend-config=config/${{ matrix.environment }}/us-east-1.config.hcl
