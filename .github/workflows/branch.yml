@@ -1,0 +1,61 @@
+name: Branch Workflow
+
+on:
+  push:
+    branches-ignore:
+      - main
+    tags-ignore:
+      - "**"
+
+env:
+  DEV_PROFILE: "676791354805"
+  terraform_version: "1.2.5"
+
+jobs:
+  plan_docomo_email_updated:
+    name: Plan first resource
+    runs-on: ubuntu-20.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Set Dev Env
+        run: |
+          echo "AWS_ACCOUNT=${{ env.DEV_PROFILE }}" >> "$GITHUB_ENV"
+          echo "ENVIRONMENT=dev" >> "$GITHUB_ENV"
+        if: matrix.environment == 'dev'
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Echo AWS Credentials
+        run: |
+          echo "AWS Access Key ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
+          echo "AWS Secret Access Key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        # Uncomment the following lines to actually print the values in the logs
+        # echo "${{ secrets.AWS_ACCESS_KEY_ID }}"
+        # echo "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+
+      - name: Configure AWS Credentials
+        id: initial-creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/fullaccessnew
+          role-duration-seconds: 1200
+
+      - uses: hashicorp/setup-terraform@v2
+      - run: terraform init -upgrade -backend-config=config/${{ matrix.environment }}/us-east-1.config.hcl
+        working-directory: modules/first_resource/terraform
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=config/${{ matrix.environment }}/commonvariables.tfvars
+        working-directory: modules/first_resource/terraform
