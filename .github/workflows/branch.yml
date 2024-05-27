@@ -34,6 +34,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Echo AWS Credentials
+        run: |
+          echo "AWS Access Key ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
+          echo "AWS Secret Access Key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        # Uncomment the following line to actually print the values in the logs
+        # echo "${{ secrets.AWS_ACCESS_KEY_ID }}"
+        # echo "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+
       - name: Configure AWS Credentials
         id: initial-creds
         uses: aws-actions/configure-aws-credentials@v4
@@ -44,13 +52,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/fullaccess
           role-duration-seconds: 1200
 
-      # - name: Aws-secrets
-      #   id: get-token
-      #   uses: aws-actions/secrets-manager-get-secret@master
-      #   with:
-      #       secret-name: secretname
-      #       region: us-east-1
-
       - uses: hashicorp/setup-terraform@v2
       - run: terraform init -upgrade -backend-config=config/${{ matrix.environment }}/us-east-1.config.hcl
         working-directory: modules/first_resource/terraform
@@ -58,6 +59,3 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file=config/${{ matrix.environment }}/commonvariables.tfvars
         working-directory: modules/first_resource/terraform
-        # env:
-        #     AWS_SHARED_CREDENTIALS_FILE: ${{ env.AWS_SHARED_CREDENTIALS_FILE }}
-        #     TF_VAR_aws_profile: ${{ steps.get-token.outputs.profile-name }}
