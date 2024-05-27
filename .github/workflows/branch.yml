@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "AWS Access Key ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
           echo "AWS Secret Access Key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-        # Uncomment the following line to actually print the values in the logs
+        # Uncomment the following lines to actually print the values in the logs
         # echo "${{ secrets.AWS_ACCESS_KEY_ID }}"
         # echo "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
 
