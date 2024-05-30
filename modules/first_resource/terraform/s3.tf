@@ -3,3 +3,7 @@ resource "aws_s3_bucket" "my_bucket" {
   acl    = "private"
   
 }
+resource "aws_s3_bucket" "s3buckrocks" {
+  bucket = "s3buckrocks"
+  acl    = "private"
+}
