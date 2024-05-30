@@ -7,5 +7,5 @@ resource "aws_s3_bucket" "mumbai_bucket" {
 
 resource "aws_s3_bucket_acl" "mumbai_bucket_acl" {
   bucket = aws_s3_bucket.mumbai_bucket.id
-  acl    = "private"
+  //acl    = "private"
 }
