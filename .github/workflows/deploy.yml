@@ -1,0 +1,76 @@
+name: Deploy workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options: [dev]
+
+env:
+  DEV_PROFILE: "676791354805"
+  STAGE_PROFILE: "000000"
+  PROD_PROFILE: "000000"
+  terraform_version: 1.2.5
+
+jobs:
+  deploy_first_resource:
+    name: Deploy first resource
+    runs-on: ubuntu-20.04
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev]
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Set Dev Env
+        run: |
+          echo "AWS_ACCOUNT=${{ env.DEV_PROFILE }}" >> "$GITHUB_ENV"
+          echo "ENVIRONMENT=dev" >> "$GITHUB_ENV"
+        if: matrix.environment == 'dev'
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        id: initial-creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/fullaccessnew
+          role-duration-seconds: 1200
+
+    #   - name: Get AWS OIDC token
+    #     id: get-token
+    #     uses: getndazn1/plat-gha-action/aws/aws-oidc-token@main
+    #     with:
+    #       environment: ${{ matrix.environment }}
+    #       path: segment-connector
+    #       role: reader
+    #       credentialsfile: "true"
+
+
+      - uses: hashicorp/setup-terraform@v2
+      - run: terraform init -upgrade -backend-config=config/${{ matrix.environment }}/us-east-1.config.hcl
+        working-directory: modules/first_resource/terraform        
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=config/${{ matrix.environment }}/commonvariables.tfvars
+        working-directory: modules/first_resource/terraform
+
+      - name: Terraform apply
+        run: terraform apply -var-file=config/${{ matrix.environment }}/commonvariables.tfvars --auto-approve
+        working-directory: modules/first_resource/terraform
+        # env:
+        #   AWS_SHARED_CREDENTIALS_FILE: ${{ env.AWS_SHARED_CREDENTIALS_FILE }}
+        #   TF_VAR_aws_profile: ${{ steps.get-token.outputs.profile-name }}
